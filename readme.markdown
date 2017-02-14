@@ -3,7 +3,13 @@
 Penguins are gritty guards for your HTTP endpoints. Moreover, they won't spam
 your website with their checks.
 
+Assumes Python 3 on both the main script and the test sever.
+
 # Usage
+
+Start an SMTP server. You can use Python's as follows
+
+    sudo python -m smtpd -n -c DebuggingServer localhost:25
 
 Create a JSON config file which will specify the endpoints you want hit and the
 expected status code. You also need to specify the email address you want to be
@@ -24,11 +30,15 @@ notified when something seems amiss.
 Pinguin will check this endpoint four times per minute and notify you if
 anything is amiss.
 
+A Flask app is provided as a test server.
+
 # Caveats
 
 This relies on your web server responding with the proper status codes. Some
 websites, for some reason, always respond with status 200, despite rendering a
 page that basically tells the user they got anything but status 200.
+
+Just right now, checking a lot of URLs will surely cause scheduling problems.
 
 # License
 

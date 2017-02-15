@@ -1,6 +1,6 @@
 import json
 import requests
-import smptplib
+import smtplib
 import sys
 import time
 
@@ -20,8 +20,12 @@ def pinguin_daemon(email, watchlist, email_sender):
     try:
         while True:
             for idx, endpoint in enumerate(watchlist):
+                print("hitting %s" % endpoint["url"])
                 resp = requests.request(endpoint["method"], endpoint["url"])
-            sleep(0.25)
+            time.sleep(15)
+    except:
+        import traceback
+        traceback.print_exc()
     finally:
         email_sender.close()
 
@@ -35,4 +39,5 @@ if __name__ == "__main__":
 
     with open(sys.argv[1]) as config:
         cfg = json.load(config)
-        pinguin_daemon(cfg["notify"], cfg["checks"], "pinguin@skytreader.net")
+        email_sender = smtplib.SMTP("localhost")
+        pinguin_daemon(cfg["notify"], cfg["checks"], email_sender)

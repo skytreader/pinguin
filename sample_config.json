@@ -1,0 +1,25 @@
+{
+    "notify": "sample@sample.com",
+    "checks": [
+        {
+            "url": "http://127.0.0.1:3141",
+            "method": "GET",
+            "resp": 200
+        },
+        {
+            "url": "http://127.0.0.1:3141",
+            "method": "POST",
+            "resp": 200
+        },
+        {
+            "url": "http://127.0.0.1:3141",
+            "method": "PUT",
+            "resp": 200
+        },
+        {
+            "url": "http://127.0.0.1:3141",
+            "method": "PATCH",
+            "resp": 200
+        }
+    ]
+}

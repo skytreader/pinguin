@@ -19,8 +19,8 @@ to be notified when something seems amiss.
         "notify": "email@company.co",
         "checks": [
             {
-                "url": "http://127.0.0.1:7070"
-                "method": "GET"
+                "url": "http://127.0.0.1:7070",
+                "method": "GET",
                 "resp": 200
             }
             ...
@@ -31,6 +31,20 @@ Pinguin will check this endpoint four times per minute and notify you if
 anything is amiss.
 
 A Flask app is provided as a test server.
+
+## Try it out
+
+Create separate virtualenvs for the main pinguin script as well as for the
+test server. `cd` into the `test_server/` directory and, while in your
+virtualenv, run the server:
+
+    $ python server.py 
+     * Running on http://127.0.0.1:3141/ (Press CTRL+C to quit)
+
+Change the email in the `notify` field of the config to where you want to
+receive notifications then invoke the main script:
+
+    $ python pinguin.py sample_config.json
 
 # Caveats
 

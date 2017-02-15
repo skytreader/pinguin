@@ -11,9 +11,9 @@ Start an SMTP server. You can use Python's as follows
 
     sudo python -m smtpd -n -c DebuggingServer localhost:25
 
-Create a JSON config file which will specify the endpoints you want hit and the
-expected status code. You also need to specify the email address you want to be
-notified when something seems amiss.
+Create a JSON config file which will specify the endpoints you want to hit and
+the expected status code. You also need to specify the email address you want
+to be notified when something seems amiss.
 
     {
         "notify": "email@company.co",

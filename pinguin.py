@@ -1,4 +1,5 @@
 import json
+import logging
 import requests
 import smtplib
 import sys
@@ -10,6 +11,17 @@ The endpoint %s has been returning unexpected status codes. You are expecting %d
 but we are getting %s.
 """
 
+logger = logging.getLogger("pinguin")
+logger.setLevel(logging.INFO)
+
+formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
+file_handler = logging.FileHandler("_pinguin.log")
+file_handler.setFormatter(formatter)
+stream_handler = logging.StreamHandler()
+stream_handler.setFormatter(formatter)
+logger.addHandler(file_handler)
+logger.addHandler(stream_handler)
+
 
 def raise_alarm(email, endpoint, error):
     from_
@@ -20,8 +32,9 @@ def pinguin_daemon(email, watchlist, email_sender):
     try:
         while True:
             for idx, endpoint in enumerate(watchlist):
-                print("hitting %s" % endpoint["url"])
+                logger.info("checking %s" % endpoint["url"])
                 resp = requests.request(endpoint["method"], endpoint["url"])
+                logger.info("response status code %d" % resp.status_code)
             time.sleep(15)
     except:
         import traceback

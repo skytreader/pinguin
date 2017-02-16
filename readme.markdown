@@ -32,6 +32,11 @@ anything is amiss.
 
 A Flask app is provided as a test server.
 
+## Reporting behavior
+
+The window for error reporting frequency is not sliding; that is, the counter
+for errors resets everytime a report is made.
+
 ## Try it out
 
 Create separate virtualenvs for the main pinguin script as well as for the

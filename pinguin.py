@@ -12,6 +12,7 @@ EMAIL_MSG_TEMPLATE = """
 The endpoint %s has been returning unexpected status codes. You are expecting %d
 but we are getting %s.
 """
+FREQUENCY_THRESHOLD_SECS = 120
 
 logger = logging.getLogger("pinguin")
 logger.setLevel(logging.INFO)
@@ -25,6 +26,7 @@ logger.addHandler(file_handler)
 logger.addHandler(stream_handler)
 
 
+
 def raise_alarm(email, endpoint, error, email_sender):
     msg = MIMEText(EMAIL_MSG_TEMPLATE % (endpoint["url"], endpoint["resp"], error))
     msg["Subject"] = "Persistent %s error on %s" % (error, endpoint["url"])
@@ -35,6 +37,7 @@ def raise_alarm(email, endpoint, error, email_sender):
 
 def pinguin_daemon(email, watchlist, email_sender):
     endpoint_errors = {}
+    error_timestamps = {}
     try:
         while True:
             for idx, endpoint in enumerate(watchlist):
@@ -46,16 +49,25 @@ def pinguin_daemon(email, watchlist, email_sender):
                     if endpoint_errors.get(endpoint["url"]):
                         if endpoint_errors[endpoint["url"]].get(resp.status_code):
                             endpoint_errors[endpoint["url"]][resp.status_code] += 1
+                            error_timestamps[endpoint["url"]][resp.status_code] = time.time()
                         else:
                             endpoint_errors[endpoint["url"]][resp.status_code] = 1
+                            error_timestamps[endpoint["url"]][resp.status_code] = time.time()
                         
                         # TODO Fix magic number
-                        if endpoint_errors[endpoint["url"]][resp.status_code] > 4:
+                        if (
+                            endpoint_errors[endpoint["url"]][resp.status_code] > 4
+                            and (
+                                time.time() -
+                                error_timestamps[endpoint["url"]][resp.status_code]
+                            ) <= FREQUENCY_THRESHOLD_SECS
+                        ):
                             logger.warn("Raising alarm for error %d on endpoint %s" % (resp.status_code, endpoint["url"]))
                             raise_alarm(email, endpoint, resp.status_code, email_sender)
                     else:
                         endpoint_errors[endpoint["url"]] = {}
                         endpoint_errors[endpoint["url"]][resp.status_code] = 1
+                        error_timestamps[endpoint["url"]][resp.status_code] = time.time()
 
             time.sleep(15)
     except:

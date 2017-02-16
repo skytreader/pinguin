@@ -1,3 +1,5 @@
+from email.mime.text import MIMEText
+
 import json
 import logging
 import requests
@@ -23,8 +25,12 @@ logger.addHandler(file_handler)
 logger.addHandler(stream_handler)
 
 
-def raise_alarm(email, endpoint, error):
-    from_
+def raise_alarm(email, endpoint, error, email_sender):
+    msg = MIMEText(EMAIL_MSG_TEMPLATE % (endpoint["url"], endpoint["resp"], error))
+    msg["Subject"] = "Persistent %s error on %s" % (error, endpoint["url"])
+    msg["From"] = "pinguin@skytreader.net"
+    msg["To"] = email
+    email_sender.sendmail(msg["from"], msg["To"], msg.as_string())
 
 
 def pinguin_daemon(email, watchlist, email_sender):
@@ -35,6 +41,22 @@ def pinguin_daemon(email, watchlist, email_sender):
                 logger.info("checking %s" % endpoint["url"])
                 resp = requests.request(endpoint["method"], endpoint["url"])
                 logger.info("response status code %d" % resp.status_code)
+
+                if resp.status_code != endpoint["resp"]:
+                    if endpoint_errors.get(endpoint["url"]):
+                        if endpoint_errors[endpoint["url"]].get(resp.status_code):
+                            endpoint_errors[endpoint["url"]][resp.status_code] += 1
+                        else:
+                            endpoint_errors[endpoint["url"]][resp.status_code] = 1
+                        
+                        # TODO Fix magic number
+                        if endpoint_errors[endpoint["url"]][resp.status_code] > 4:
+                            logger.warn("Raising alarm for error %d on endpoint %s" % (resp.status_code, endpoint["url"]))
+                            raise_alarm(email, endpoint, resp.status_code, email_sender)
+                    else:
+                        endpoint_errors[endpoint["url"]] = {}
+                        endpoint_errors[endpoint["url"]][resp.status_code] = 1
+
             time.sleep(15)
     except:
         import traceback

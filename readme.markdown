@@ -24,8 +24,12 @@ to be notified when something seems amiss.
                 "resp": 200
             }
             ...
-        ]
+        ],
+        ...
     }
+
+There are other config values; check `sample_config.json` for the available
+options.
 
 Pinguin will check this endpoint four times per minute and notify you if
 anything is amiss.

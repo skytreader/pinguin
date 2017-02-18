@@ -10,21 +10,10 @@ import time
 
 EMAIL_MSG_TEMPLATE = """
 The endpoint %s has been returning unexpected status codes. You are expecting %d
-but we are getting %s.
+but penguins are getting %s.
 """
 FREQUENCY_THRESHOLD_SECS = 120
-
 logger = logging.getLogger("pinguin")
-logger.setLevel(logging.INFO)
-
-formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
-file_handler = logging.FileHandler("_pinguin.log")
-file_handler.setFormatter(formatter)
-stream_handler = logging.StreamHandler()
-stream_handler.setFormatter(formatter)
-logger.addHandler(file_handler)
-logger.addHandler(stream_handler)
-
 
 
 def raise_alarm(email, endpoint, error, email_sender):
@@ -60,13 +49,14 @@ def pinguin_daemon(email, watchlist, email_sender):
                             and (
                                 time.time() -
                                 error_timestamps[endpoint["url"]][resp.status_code]
-                            ) <= FREQUENCY_THRESHOLD_SECS
+                            ) >= FREQUENCY_THRESHOLD_SECS
                         ):
                             logger.warn("Raising alarm for error %d on endpoint %s" % (resp.status_code, endpoint["url"]))
                             raise_alarm(email, endpoint, resp.status_code, email_sender)
                     else:
                         endpoint_errors[endpoint["url"]] = {}
                         endpoint_errors[endpoint["url"]][resp.status_code] = 1
+                        error_timestamps[endpoint["url"]] = {}
                         error_timestamps[endpoint["url"]][resp.status_code] = time.time()
 
             time.sleep(15)
@@ -86,5 +76,16 @@ if __name__ == "__main__":
 
     with open(sys.argv[1]) as config:
         cfg = json.load(config)
+
+        logger.setLevel(logging.getLevelName(cfg["loglevel"]))
+        
+        formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
+        file_handler = logging.FileHandler("_pinguin.log")
+        file_handler.setFormatter(formatter)
+        stream_handler = logging.StreamHandler()
+        stream_handler.setFormatter(formatter)
+        logger.addHandler(file_handler)
+        logger.addHandler(stream_handler)
+
         email_sender = smtplib.SMTP("localhost")
         pinguin_daemon(cfg["notify"], cfg["checks"], email_sender)

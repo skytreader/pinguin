@@ -21,5 +21,6 @@
             "method": "PATCH",
             "resp": 200
         }
-    ]
+    ],
+    "loglevel": "INFO"
 }

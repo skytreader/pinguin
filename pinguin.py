@@ -12,7 +12,7 @@ EMAIL_MSG_TEMPLATE = """
 The endpoint %s has been returning unexpected status codes. You are expecting %d
 but penguins are getting %s.
 """
-FREQUENCY_THRESHOLD_SECS = 120
+FREQUENCY_THRESHOLD_SECS = 121
 logger = logging.getLogger("pinguin")
 
 
@@ -32,25 +32,33 @@ def pinguin_daemon(email, watchlist, email_sender):
             for idx, endpoint in enumerate(watchlist):
                 logger.info("checking %s" % endpoint["url"])
                 resp = requests.request(endpoint["method"], endpoint["url"])
+                resp_time = time.time()
                 logger.info("response status code %d" % resp.status_code)
 
                 if resp.status_code != endpoint["resp"]:
                     if endpoint_errors.get(endpoint["url"]):
                         if endpoint_errors[endpoint["url"]].get(resp.status_code):
+                            timediff = resp_time - error_timestamps[endpoint["url"]][resp.status_code]
                             endpoint_errors[endpoint["url"]][resp.status_code] += 1
-                            error_timestamps[endpoint["url"]][resp.status_code] = time.time()
+                            if timediff > FREQUENCY_THRESHOLD_SECS:
+                                error_timestamps[endpoint["url"]][resp.status_code] = time.time()
                         else:
                             endpoint_errors[endpoint["url"]][resp.status_code] = 1
                             error_timestamps[endpoint["url"]][resp.status_code] = time.time()
+
+                        has_error_reached_threshold = (
+                            endpoint_errors[endpoint["url"]][resp.status_code] > 4
+                        )
+                        timediff = resp_time - error_timestamps[endpoint["url"]][resp.status_code]
+                        has_timefreq_reached_threshold = timediff <= FREQUENCY_THRESHOLD_SECS
+                        logger.debug("error count threshold? %s" % has_error_reached_threshold)
+                        logger.debug(
+                            "timefreq threshold (%s)? %s diff: %s" %
+                            (resp.status_code, has_timefreq_reached_threshold, timediff)
+                        )
                         
                         # TODO Fix magic number
-                        if (
-                            endpoint_errors[endpoint["url"]][resp.status_code] > 4
-                            and (
-                                time.time() -
-                                error_timestamps[endpoint["url"]][resp.status_code]
-                            ) >= FREQUENCY_THRESHOLD_SECS
-                        ):
+                        if has_error_reached_threshold and has_timefreq_reached_threshold:
                             logger.warn("Raising alarm for error %d on endpoint %s" % (resp.status_code, endpoint["url"]))
                             raise_alarm(email, endpoint, resp.status_code, email_sender)
                     else:
